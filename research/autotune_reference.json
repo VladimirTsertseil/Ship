@@ -1,0 +1,24 @@
+{
+  "baseline_pid": {"Kp": 9.0, "Ki": 0.08, "Kd": 120.0},
+  "optimized_pid": {"Kp": 14.0, "Ki": 0.1775, "Kd": 206.25},
+  "search_bounds": {"Kp": [4.0, 14.0], "Ki": [0.03, 0.20], "Kd": [50.0, 220.0]},
+  "robust_scenarios": {
+    "disturbance_deg": [5, 10, 15],
+    "plant_variants": [
+      {"name": "nominal", "K_multiplier": 1.0, "T_multiplier": 1.0},
+      {"name": "agile", "K_multiplier": 1.1, "T_multiplier": 0.9},
+      {"name": "inertial", "K_multiplier": 0.9, "T_multiplier": 1.1}
+    ]
+  },
+  "objective": {
+    "manual": 0.7660057671427452,
+    "optimized": 0.5071339508909866,
+    "reduction_percent": 33.79502183349984
+  },
+  "nominal_results": {
+    "manual_10": {"IAE": 260.13831171709705, "max_deviation": 1.0812910253091834, "recovery": 114.6000000000418, "steady_error": 0.03813522068567465},
+    "optimized_5": {"IAE": 148.28772670204205, "max_deviation": 0.3279532379760015, "recovery": 0.0, "steady_error": 0.001677011678935969},
+    "optimized_10": {"IAE": 176.38581884730078, "max_deviation": 0.6189804792547333, "recovery": 57.4000000000288, "steady_error": 0.0032128671758844263},
+    "optimized_15": {"IAE": 204.48391745456655, "max_deviation": 0.9101953792046347, "recovery": 84.15000000003488, "steady_error": 0.004748582734347195}
+  }
+}

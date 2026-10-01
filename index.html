@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ship Control Lab — симулятор управления курсом судна</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">27.03.04 · Управление в технических системах</div>
+      <h1>Ship Control Lab</h1>
+      <p>Интерактивная модель управления курсом судна с робастной автоматической настройкой ПИД-регулятора.</p>
+    </div>
+    <div class="status-card">
+      <span id="runDot" class="dot"></span>
+      <div><b id="runStatus">Готово</b><small id="simClock">t = 0.0 с</small></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel controls">
+      <section>
+        <h2>Управление</h2>
+        <div class="button-row">
+          <button id="startBtn" class="primary">▶ Запустить</button>
+          <button id="pauseBtn">⏸ Пауза</button>
+          <button id="resetBtn">↺ Сброс</button>
+        </div>
+        <button id="instantBtn" class="wide accent-button">⚡ Рассчитать опыт до конца</button>
+        <button id="articleBtn" class="wide article-button">★ Эксперимент из статьи</button>
+        <label>Скорость анимации
+          <div class="inline"><input id="speedRange" type="range" min="0.25" max="100" step="0.25" value="20"><output id="speedOut">20×</output></div>
+        </label>
+      </section>
+
+      <section>
+        <h2>Задание курса</h2>
+        <div class="grid2">
+          <label>Начальный курс, °<input id="initialCourse" type="number" value="0" step="1"></label>
+          <label>Заданный курс, °<input id="targetCourse" type="number" value="5" step="1"></label>
+          <label>Ступень курса с, с<input id="targetStepTime" type="number" value="20" step="1" min="0"></label>
+          <label>Скорость судна, уз<input id="shipSpeed" type="number" value="8" step="0.5" min="0"></label>
+          <label>Длительность, с<input id="duration" type="number" value="600" step="10" min="20"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Регулятор</h2>
+        <label>Тип
+          <select id="controllerType">
+            <option value="P">П</option>
+            <option value="PI">ПИ</option>
+            <option value="PD">ПД</option>
+            <option value="PID" selected>ПИД</option>
+          </select>
+        </label>
+        <div class="grid3">
+          <label>Kp<input id="kp" type="number" value="9" step="0.1"></label>
+          <label>Ki, 1/с<input id="ki" type="number" value="0.08" step="0.01"></label>
+          <label>Kd, с<input id="kd" type="number" value="120" step="1"></label>
+        </div>
+        <div class="hint">Параметры можно менять во время анимации. Производная составляющая использует измеренную угловую скорость рыскания, как в статье.</div>
+      </section>
+
+      <section class="autotune-controls">
+        <h2>Автонастройка ПИД</h2>
+        <button id="autotuneBtn" class="wide autotune-button">⚙ Подобрать Kp, Ki, Kd</button>
+        <div id="autotuneStatus" class="autotune-status">Поиск по 9 сценариям: 3 уровня возмущения × 3 варианта динамики судна.</div>
+        <div class="button-stack compact-stack">
+          <button id="applyOptimizedBtn">Применить параметры статьи</button>
+          <button id="compareTuneBtn">Сравнить ручную / автонастройку</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Модель Номото</h2>
+        <div class="grid2">
+          <label>K, 1/с<input id="nomotoK" type="number" value="0.185" step="0.005"></label>
+          <label>T, с<input id="nomotoT" type="number" value="107.3" step="0.1"></label>
+        </div>
+        <div class="formula">T · dr/dt + r = K · (δ + δ<sub>в</sub>)</div>
+      </section>
+
+      <section>
+        <h2>Внешнее возмущение</h2>
+        <label>Тип
+          <select id="disturbanceType">
+            <option value="step" selected>Постоянное после включения</option>
+            <option value="pulse">Импульс</option>
+            <option value="sine">Синусоидальное</option>
+          </select>
+        </label>
+        <div class="grid2">
+          <label>Эквивалент, ° руля<input id="disturbance" type="number" value="10" step="1"></label>
+          <label>Начало, с<input id="disturbanceStart" type="number" value="220" step="1"></label>
+          <label class="pulse-only">Длительность, с<input id="disturbanceDuration" type="number" value="20" step="1"></label>
+          <label class="sine-only">Период, с<input id="disturbancePeriod" type="number" value="50" step="1"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Рулевой привод</h2>
+        <div class="grid2">
+          <label>Макс. угол, °<input id="rudderLimit" type="number" value="35" step="1" min="1"></label>
+          <label>Скорость перекладки, °/с<input id="rudderRate" type="number" value="5" step="0.5" min="0.1"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Опыты из статьи</h2>
+        <div class="preset-grid">
+          <button data-preset="article_manual10">Ручной ПИД · 10°</button>
+          <button data-preset="article_opt10">Авто-ПИД · 10°</button>
+          <button data-preset="article_opt5">Авто-ПИД · 5°</button>
+          <button data-preset="article_opt15">Авто-ПИД · 15°</button>
+        </div>
+        <div class="hint">Ручная настройка: 9 / 0,08 / 120. Автонастройка статьи: 14 / 0,1775 / 206,25.</div>
+      </section>
+
+      <section>
+        <h2>Дополнительные сценарии</h2>
+        <div class="preset-grid">
+          <button data-preset="strong">Сильное возмущение</button>
+          <button data-preset="slow">Инерционное судно</button>
+          <button data-preset="aggressive">Агрессивный ПИД</button>
+          <button data-preset="pulse">Порыв / импульс</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Экспорт</h2>
+        <div class="button-stack">
+          <button id="articleCompareBtn">Сравнить ручную / автонастройку</button>
+          <button id="compareBtn">Сравнить П / ПИ / ПД / ПИД</button>
+          <button id="csvBtn">Скачать CSV текущего опыта</button>
+          <button id="pngBtn">Скачать график курса PNG</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="live-cards">
+        <article><span>Курс</span><b id="mCourse">0.0°</b><small>фактический</small></article>
+        <article><span>Задание</span><b id="mTarget">0.0°</b><small>текущий заданный курс</small></article>
+        <article><span>Ошибка</span><b id="mError">0.0°</b><small>заданный − фактический</small></article>
+        <article><span>Руль</span><b id="mRudder">0.0°</b><small>фактический угол</small></article>
+        <article><span>Рыскание</span><b id="mYaw">0.000°/с</b><small>угловая скорость</small></article>
+        <article><span>Возмущение</span><b id="mDist">0.0°</b><small>эквивалент руля</small></article>
+      </div>
+
+      <div class="card vessel-card">
+        <div class="card-head"><div><h2>Движение судна</h2><p>Визуализация строится по тем же расчётным данным, что графики и таблицы.</p></div><div class="legend"><span class="legend-target"></span> заданный курс <span class="legend-track"></span> траектория</div></div>
+        <canvas id="vesselCanvas"></canvas>
+      </div>
+
+      <div class="chart-grid">
+        <div class="card"><div class="card-head"><h2>Курс</h2><span>ψ(t), °</span></div><canvas id="courseCanvas"></canvas></div>
+        <div class="card"><div class="card-head"><h2>Ошибка курса</h2><span>e(t), °</span></div><canvas id="errorCanvas"></canvas></div>
+        <div class="card"><div class="card-head"><h2>Руль</h2><span>δ(t), °</span></div><canvas id="rudderCanvas"></canvas></div>
+        <div class="card metrics-card">
+          <div class="card-head"><h2>Показатели качества</h2><span>по методике статьи</span></div>
+          <div class="metrics-grid metrics-grid-article">
+            <div><small>Время нарастания</small><b id="qRise">—</b></div>
+            <div><small>Перерегулирование</small><b id="qOvershoot">—</b></div>
+            <div><small>Установление до возмущения</small><b id="qSettling">—</b></div>
+            <div><small>Макс. отклонение после δв</small><b id="qMaxDev">—</b></div>
+            <div><small>Время восстановления</small><b id="qRecovery">—</b></div>
+            <div><small>Установившаяся ошибка</small><b id="qSteady">—</b></div>
+            <div><small>Макс. |руль|</small><b id="qMaxRudder">—</b></div>
+            <div><small>IAE</small><b id="qIAE">—</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card autotune-card">
+        <div class="card-head"><div><h2>Робастная автонастройка ПИД</h2><p>Целевая функция оценивается на девяти сценариях и учитывает ошибку, время восстановления, отклонение курса, переходный процесс и работу руля.</p></div><span id="autotuneBadge" class="badge">не запускалась</span></div>
+        <div class="tune-summary">
+          <div><small>J ручной настройки</small><b id="jManual">0.7660</b></div>
+          <div><small>J автонастройки</small><b id="jOptimized">0.5071</b></div>
+          <div><small>Снижение J</small><b id="jGain">33.8%</b></div>
+          <div><small>Найдено</small><b id="gainResult">Kp 14 · Ki 0.1775 · Kd 206.25</b></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>δв</th><th>Настройка</th><th>IAE, °·с</th><th>Макс. откл., °</th><th>Возврат, с</th><th>e<sub>уст</sub>, °</th></tr></thead>
+            <tbody id="tuneBody"><tr><td colspan="6">Нажмите «Подобрать Kp, Ki, Kd» или «Применить параметры статьи».</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card compare-card">
+        <div class="card-head"><div><h2>Сравнение регуляторов</h2><p>Расчёт выполняется мгновенно с текущими параметрами модели.</p></div></div>
+        <canvas id="compareCanvas"></canvas>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Регулятор</th><th>t<sub>н</sub>, с</th><th>σ, °</th><th>Макс. откл., °</th><th>Возврат, с</th><th>e<sub>уст</sub>, °</th></tr></thead>
+            <tbody id="compareBody"><tr><td colspan="6">Сравнение ещё не выполнено.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card article-check-card">
+        <div class="card-head"><div><h2>Проверка воспроизводимости статьи</h2><p>Программа заново рассчитывает ручную и автоматически настроенную системы и сверяет ключевые числа новой версии статьи.</p></div><button id="verifyBtn" class="verify-button">Проверить данные статьи</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Опыт</th><th>Макс. откл., °</th><th>Возврат, с</th><th>IAE, °·с</th><th>Статус</th></tr></thead>
+            <tbody id="verifyBody"><tr><td colspan="5">Нажмите «Проверить данные статьи».</td></tr></tbody>
+          </table>
+        </div>
+        <div id="verifySummary" class="verification-summary">Проверка ещё не выполнялась.</div>
+      </div>
+
+      <div class="note">
+        <b>Важно:</b> это учебно-исследовательская модель. Траектория на плоскости предназначена для наглядности. Динамика курса рассчитывается по модели Номото первого порядка; алгоритм автонастройки выполняет реальный детерминированный поиск, а не подставляет заранее заданные коэффициенты.
+      </div>
+    </section>
+  </main>
+
+  <script src="model.js"></script>
+  <script src="optimizer.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

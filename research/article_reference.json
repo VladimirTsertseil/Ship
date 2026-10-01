@@ -1,0 +1,24 @@
+{
+  "description": "Эталонные численные результаты, использованные в статье СПбГМТУ-2026.",
+  "model": {
+    "nomoto_K_1_s": 0.185,
+    "nomoto_T_s": 107.3,
+    "dt_s": 0.05,
+    "target_course_deg": 5.0,
+    "target_step_time_s": 20.0,
+    "disturbance_time_s": 220.0,
+    "duration_s": 600.0,
+    "rudder_limit_deg": 35.0,
+    "rudder_rate_deg_s": 5.0
+  },
+  "controllers": {
+    "PD": {"Kp": 9.0, "Ki_1_s": 0.0, "Kd_s": 120.0},
+    "PID": {"Kp": 9.0, "Ki_1_s": 0.08, "Kd_s": 120.0}
+  },
+  "results": {
+    "PD_10deg": {"max_deviation_deg": 1.1156336334, "recovery_time_s": null, "steady_state_error_deg": 1.1111111111},
+    "PID_5deg": {"max_deviation_deg": 0.5812392927, "recovery_time_s": 54.05, "steady_state_error_deg": 0.0203939438},
+    "PID_10deg": {"max_deviation_deg": 1.0812910253, "recovery_time_s": 114.60, "steady_state_error_deg": 0.0381352207},
+    "PID_15deg": {"max_deviation_deg": 1.5815266213, "recovery_time_s": 151.70, "steady_state_error_deg": 0.0558764975}
+  }
+}
